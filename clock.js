@@ -17,47 +17,6 @@ var brightGreen = new HSVColour(120, 100, 100);
 var brightRed = new RGBColour(255, 50, 0);
 var clock = [];
 
-function toRGB (comps)
-{
-  return "rgb(" + comps[0].toString() + "," + comps[1].toString() +
-         "," + comps[2].toString() + ")";
-}
-
-function mixRGB (col1, col2, alpha)
-{
-  if (alpha == undefined)
-    alpha = 0.5;
-
-  var inv_alpha = 1.0 - alpha;
-  return [ Math.min (255, parseInt(col1[0] * alpha + col2[0] * inv_alpha)),
-           Math.min (255, parseInt(col1[1] * alpha + col2[1] * inv_alpha)),
-           Math.min (255, parseInt(col1[2] * alpha + col2[2] * inv_alpha)) ];
-}
-
-// hours, minutes, seconds
-var hoursColour = [ 255, 255, 0 ]; /* yellow */
-//var minsColour =  [ 255, 240, 0 ];
-var minsColour =  [ 0, 240, 255 ];
-var secsColour =  [ 255, 255, 255 ];
-
-var white = [ 255, 255, 255 ];
-
-function drawArc (ctx, startCol, endCol, startAngle, endAngle)
-{
-  //debug ("<p>Arc " + startAngle + " to " + endAngle + " col " + startCol + " to " + endCol);
-
-  for (a = startAngle; a < endAngle; a += INTERVAL) {
-     var mix = 1.0 - (a - startAngle) / (endAngle - startAngle);
-     var col = toRGB (mixRGB (startCol, endCol, mix));
-     var end = Math.min (a + INTERVAL + (Math.PI / 100), endAngle);
-
-     ctx.beginPath ();
-     ctx.fillStyle = col;
-     ctx.arc (0, 0, drawRadius, a, end);
-     ctx.arc (0, 0, innerRadius, end, a, true);
-     ctx.fill();
-  }
-}
 
 function show(ctx, x, y) {
   ctx.save();
@@ -176,43 +135,6 @@ function draw(ctx, x, y, col1, col2, hours, mins)
 
 
 
-}
-
-function handleKeyPress(event)
-{
-  if (event.keyCode in { 37:'', 39:'' }) {
-      return stopEvent(event);
-  }
-  return true;
-}
-
-function handleKey(event,dir)
-{
-  switch (event.keyCode) {
-    case 37: key_left = dir;
-      return stopEvent(event);
-    case 38: key_up = dir;
-      return stopEvent(event);
-    case 39: key_right = dir;
-      return stopEvent(event);
-  }
-  return true;
-}
-
-function handleKeyDown(event)
-{
-  return handleKey(event,true);
-}
-
-function handleKeyUp(event)
-{
-  return handleKey(event,false);
-}
-
-function stopEvent(event) {
-  if (event.preventDefault) event.preventDefault();
-  if (event.stopPropagation) event.stopPropagation();
-  return false;
 }
 
 function parsergb(input) {
@@ -337,97 +259,5 @@ jQuery(document).ready(function($){
  }
 })
 
-function debug(text)
-{
-  var c = document.getElementById('console');
-  c.innerHTML += text;
-}
 
 
-function rgbToCMYK(rgb)
-{
-  /* Special case all black */
-  if (rgb[0] == 0 && rgb[1] == 0 &&
-      rgb[2] == 0) {
-    return [0, 0, 0, 255];
-  }
-  var c; var m;
-  var y; var k;
-
-  /* Track K as the min of CMY as we go */
-  k = c = 255 - rgb[0];
-  m = 255 - rgb[1];
-  if (m < k)
-    k = m;
-  y = 255 - rgb[2];
-  if (y < k)
-    k = y;
-
-  /* Scale CMY to fill the full 0..255 range */
-  c = (c - k) * 255 / (255 - k);
-  m = (m - k) * 255 / (255 - k);
-  y = (y - k) * 255 / (255 - k);
-
-  return [ c, m, y, k ];
-}
-
-function cmykToRGB(cmyk)
-{
-  var c; var m;
-  var y; var k;
-
-  /* Special case grey shades with pure K */
-  if (cmyk[0] == 0 && cmyk[1] == 0 &&
-      cmyk[2] == 0) {
-    var rgb = [];
-    rgb[0] = 255 - cmyk[3];
-    rgb[1] = rgb[0];
-    rgb[2] = rgb[0];
-    return rgb;
-  }
-
-  k = 255 - cmyk[3];
-  c = cmyk[0] * k / 255;
-  m = cmyk[1] * k / 255;
-  y = cmyk[2] * k / 255;
-  k = cmyk[3];
-
-  c = (c+k > 255) ? 255 : (c+k);
-  m = (m+k > 255) ? 255 : (m+k);
-  y = (y+k > 255) ? 255 : (y+k);
-
-  return [ parseInt (255 - c), parseInt (255 - m), parseInt (255 - y) ];
-}
-
-function mixCMYK (col1, col2)
-{
-  var cmyk1 = rgbToCMYK (col1);
-  var cmyk2 = rgbToCMYK (col2);
-  var i;
-  var tmp = [];
-  var min_cmy = 65535;
-  var out = [];
-
-  /* Blend CMYK by addition, then
-   * normalise CMY into K */
-  for (i = 0; i < 3; i++) {
-    tmp[i]  = (cmyk1[i] + cmyk2[i]);// / 2;
-    if (tmp[i] < min_cmy)
-      min_cmy = tmp[i];
-  }
-
-  for (i = 0; i < 3; i++) {
-    if (tmp[i] - min_cmy > 255)
-      out[i] = 255;
-    else
-      out[i] = tmp[i] - min_cmy;
-  }
-
-  tmp[3]  = (cmyk1[3] + cmyk2[3]);// / 2;
-  if (tmp[3] + min_cmy > 255)
-    out[3] = 255;
-  else
-    out[3] = tmp[3] + min_cmy;
-
-  return cmykToRGB (out);
-}
