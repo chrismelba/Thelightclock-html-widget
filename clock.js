@@ -153,7 +153,10 @@ function tick()
   curTime = new Date();
   var newTime = curTime.getSeconds();
   newTime = newTime + 0.1 * parseInt (curTime.getMilliseconds / 100);
-
+  /*check if colours have changed*/
+  console.log(document.getElementById("hourcolor").value);
+  hourcolor = document.getElementById("hourcolor").value;
+  minutecolor = document.getElementById("minutecolor").value;
 
 
 
@@ -179,7 +182,7 @@ function tick()
     
     if (document.getElementById("manualradio").checked) {
     var mins = document.getElementById('minutestextbox').value % 60;
-    var hours = document.getElementById('hourstextbox').value % 12 + (mins / 60); 
+    var hours = document.getElementById('hourstextbox').value % 12; 
     }
 
 
@@ -187,7 +190,7 @@ function tick()
     ctx.clearRect(0,0,width,height);
     //draw(ctx, width/6, height/2,hoursColour,white, hours, mins);
 
-    var hour_pos = Math.floor((hours % 12) * pixelCount / 12 + mins/6);
+    var hour_pos = Math.floor((hours % 12) * pixelCount / 12);
     var min_pos = Math.floor(mins * pixelCount / 60);
     epiphanyface(hour_pos, min_pos);
     for (var i = clock.length - 1; i >= 0; i--) {
@@ -214,6 +217,94 @@ function tick()
 
 
 function epiphanyface(hour_pos,  min_pos)
+{
+//this face colours the clock in 2 sections, the c1->c2 divide represents the minute hand and the c2->c1 divide represents the hour hand.
+      var c1;
+      var c1blend;
+      var c2;
+      var c2blend;
+      var gap;
+      var firsthand = Math.min(hour_pos, min_pos);
+      var secondhand = Math.max(hour_pos, min_pos);
+    //check which hand is first, so we know what colour the 0 pixel is
+
+    if(hour_pos>min_pos){       
+        c2 = hourcolor;
+        c1 = minutecolor;         
+    }
+    else
+    {
+        c1 = hourcolor;
+        c2 = minutecolor;
+    }
+
+    c1blend = LinearBlend(c1, c2, blendpoint);
+
+    
+    c2blend = LinearBlend(c2, c1, blendpoint);
+
+
+    gap = secondhand - firsthand;
+
+    //create the blend between first and 2nd hand
+    for(i=firsthand; i<secondhand; i++){
+      clock[i] = LinearBlend(c2blend, c2, (i-firsthand)/gap);    
+    }
+    gap = pixelCount - gap;
+    //and the last hand
+    for(i=secondhand; i<pixelCount+firsthand; i++){
+      clock[i%pixelCount] = LinearBlend(c1blend, c1, (i-secondhand)/gap);
+
+    }
+    //clock.SetPixelColor(hour_pos,hourcolor);
+    //clock.SetPixelColor(min_pos,minutecolor);
+}
+
+function epiphanyfacehours(hour_pos,  min_pos)
+{
+//this face colours the clock in 2 sections, the c1->c2 divide represents the minute hand and the c2->c1 divide represents the hour hand.
+      var c1;
+      var c1blend;
+      var c2;
+      var c2blend;
+      var gap;
+      var firsthand = Math.min(hour_pos, min_pos);
+      var secondhand = Math.max(hour_pos, min_pos);
+    //check which hand is first, so we know what colour the 0 pixel is
+
+    if(hour_pos>min_pos){       
+        c2 = hourcolor;
+        c1 = minutecolor;         
+    }
+    else
+    {
+        c1 = hourcolor;
+        c2 = minutecolor;
+    }
+
+    c1blend = LinearBlend(c1, c2, blendpoint);
+
+    
+    c2blend = LinearBlend(c2, c1, blendpoint);
+
+
+    gap = secondhand - firsthand;
+
+    //create the blend between first and 2nd hand
+    for(i=firsthand; i<secondhand; i++){
+      clock[i] = LinearBlend(c2blend, c2, (i-firsthand)/gap);    
+    }
+    gap = pixelCount - gap;
+    //and the last hand
+    for(i=secondhand; i<pixelCount+firsthand; i++){
+      clock[i%pixelCount] = LinearBlend(c1blend, c1, (i-secondhand)/gap);
+
+    }
+    //clock.SetPixelColor(hour_pos,hourcolor);
+    //clock.SetPixelColor(min_pos,minutecolor);
+}
+
+function epiphanymins(hour_pos,  min_pos)
 {
 //this face colours the clock in 2 sections, the c1->c2 divide represents the minute hand and the c2->c1 divide represents the hour hand.
       var c1;
@@ -327,8 +418,12 @@ jQuery(document).ready(function($){
 
 
   ctx = $("#canvas")[0].getContext('2d');
-
-
+  $("#hourcolor").spectrum({
+    color: hourcolor.getCSSIntegerRGB()
+  });
+  $("#minutecolor").spectrum({
+      color: minutecolor.getCSSIntegerRGB()
+  });
 
   // Make it visually fill the positioned parent
   canvas.style.width ='100%';
