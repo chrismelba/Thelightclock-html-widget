@@ -9,12 +9,13 @@ var innerRadius;
 var curTime;
 var lastSeconds = -1;
 var TwoPI = 2 * Math.PI;
-var pixelcount = 120;
-var INTERVAL = TwoPI / pixelcount;
+var pixelCount = 300;
+var INTERVAL = TwoPI / pixelCount;
 var ctx;// = $("#canvas")[0].getContext('2d');
 
-var brightGreen = new HSVColour(120, 100, 100);
-var brightRed = new RGBColour(255, 50, 0);
+var hourcolor = new RGBColour(253, 0, 0);
+var minutecolor = new RGBColour(0,0,255);
+var blendpoint = 0.5;
 var clock = [];
 
 
@@ -25,14 +26,14 @@ function show(ctx, x, y) {
   /* Make 0 degress = midnight */
   ctx.rotate (-Math.PI/2);
 
-  for (var i = 0; i < pixelcount; i++) {
+  for (var i = 0; i < pixelCount; i++) {
     var a = i * INTERVAL;
     var end = a + INTERVAL + (Math.PI / 100);
     
     ctx.beginPath ();
-     ctx.fillStyle = clock[i];
-     ctx.arc (0, 0, drawRadius, i, end);
-     ctx.arc (0, 0, innerRadius, end, i, true);
+     ctx.fillStyle = clock[i].getCSSIntegerRGB();
+     ctx.arc (0, 0, drawRadius, a, end);
+     ctx.arc (0, 0, innerRadius, end, a, true);
      ctx.fill();
   };
   ctx.restore();
@@ -146,19 +147,19 @@ function parsergb(input) {
   }
 function tick()
 {
-  //hoursColour = parsergb(document.getElementById("hourcolourpicker").value);
-  //debug
-  //console.log(document.getElementById("hourcolourpicker").value);
-  if (key_left) {
-  }
-  else if (key_right) {
-  }
-  if (key_up) {
-  }
+
+
   /* Check the time */
   curTime = new Date();
   var newTime = curTime.getSeconds();
   newTime = newTime + 0.1 * parseInt (curTime.getMilliseconds / 100);
+
+
+
+
+  
+  
+
 
   if (newTime != lastSeconds) {
     lastSeconds = curTime.getSeconds();
@@ -185,6 +186,15 @@ function tick()
 
     ctx.clearRect(0,0,width,height);
     //draw(ctx, width/6, height/2,hoursColour,white, hours, mins);
+
+    var hour_pos = Math.floor((hours % 12) * pixelCount / 12 + mins/6);
+    var min_pos = Math.floor(mins * pixelCount / 60);
+    epiphanyface(hour_pos, min_pos);
+    for (var i = clock.length - 1; i >= 0; i--) {
+
+      
+
+    };
     show(ctx, width/6, height/2);
     //draw(ctx, width/2, height/2,hoursColour,minsColour, hours, mins);
     //draw(ctx, 5*width/6, height/2, white,minsColour , hours, mins);
@@ -200,6 +210,91 @@ function tick()
 
 
   }
+}
+
+
+function epiphanyface(hour_pos,  min_pos)
+{
+//this face colours the clock in 2 sections, the c1->c2 divide represents the minute hand and the c2->c1 divide represents the hour hand.
+      var c1;
+      var c1blend;
+      var c2;
+      var c2blend;
+      var gap;
+      var firsthand = Math.min(hour_pos, min_pos);
+      var secondhand = Math.max(hour_pos, min_pos);
+    //check which hand is first, so we know what colour the 0 pixel is
+
+    if(hour_pos>min_pos){       
+        c2 = hourcolor;
+        c1 = minutecolor;         
+    }
+    else
+    {
+        c1 = hourcolor;
+        c2 = minutecolor;
+    }
+
+    c1blend = LinearBlend(c1, c2, blendpoint);
+
+    
+    c2blend = LinearBlend(c2, c1, blendpoint);
+
+
+    gap = secondhand - firsthand;
+
+    //create the blend between first and 2nd hand
+    for(i=firsthand; i<secondhand; i++){
+      clock[i] = LinearBlend(c2blend, c2, (i-firsthand)/gap);    
+    }
+    gap = pixelCount - gap;
+    //and the last hand
+    for(i=secondhand; i<pixelCount+firsthand; i++){
+      clock[i%pixelCount] = LinearBlend(c1blend, c1, (i-secondhand)/gap);
+
+    }
+    //clock.SetPixelColor(hour_pos,hourcolor);
+    //clock.SetPixelColor(min_pos,minutecolor);
+}
+
+
+function LinearBlend(left, right, progress)
+{   
+    var hue;
+    var righth = right.getHSV().h;
+    var lefth = left.getHSV().h;
+    var d = righth-lefth;
+    var temp;
+    var output;
+    if (lefth > righth)
+    {
+        temp = righth;
+        righth = lefth;
+        lefth = temp;
+        d = -d;
+        progress = 1-progress;
+    }
+
+    if (d>180)
+    {
+        lefth += 360;
+
+        hue = (lefth+progress*(righth-lefth));
+        if (hue > 360)
+        {
+            hue -= 360;
+        }
+    }
+    else {
+        hue = lefth+progress*d;
+    }
+
+    output = new HSVColour(hue,
+        left.getHSV().s + ((right.getHSV().s - left.getHSV().s) * progress),
+        left.getHSV().v + ((right.getHSV().v - left.getHSV().v) * progress));
+
+    
+    return output;
 }
 
 function manualmode() {
@@ -233,10 +328,6 @@ jQuery(document).ready(function($){
 
   ctx = $("#canvas")[0].getContext('2d');
 
-  for (var i = 120 - 1; i >= 0; i--) {
-    clock[i] = brightGreen.getCSSHexadecimalRGB();
-  };
-  alert(brightRed.getHSL().h);
 
 
   // Make it visually fill the positioned parent
@@ -250,11 +341,13 @@ jQuery(document).ready(function($){
   height = (width/3)+10;
   needRedraw = true;
 
-
+  console.log(hourcolor.getHSV().h);
+  console.log(minutecolor.getHSV().h);
 
   /* setup */
   drawRadius = width / 6 * 0.95;
   innerRadius = drawRadius * 0.48;
+  tick();
   setInterval(tick, 100);
  }
 })
