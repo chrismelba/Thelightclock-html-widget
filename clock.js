@@ -8,10 +8,14 @@ var drawRadius;
 var innerRadius;
 var curTime;
 var lastSeconds = -1;
+var TwoPI = 2 * Math.PI;
+var pixelcount = 120;
+var INTERVAL = TwoPI / pixelcount;
 var ctx;// = $("#canvas")[0].getContext('2d');
 
-var TwoPI = 2 * Math.PI;
-var INTERVAL = TwoPI / 256;
+var brightGreen = new HSVColour(120, 100, 100);
+var brightRed = new RGBColour(255, 50, 0);
+var clock = [];
 
 function toRGB (comps)
 {
@@ -55,98 +59,31 @@ function drawArc (ctx, startCol, endCol, startAngle, endAngle)
   }
 }
 
-function rgbToCMYK(rgb)
-{
-  /* Special case all black */
-  if (rgb[0] == 0 && rgb[1] == 0 &&
-      rgb[2] == 0) {
-    return [0, 0, 0, 255];
-  }
-  var c; var m;
-  var y; var k;
+function show(ctx, x, y) {
+  ctx.save();
+  
+  ctx.translate (x, y);
+  /* Make 0 degress = midnight */
+  ctx.rotate (-Math.PI/2);
 
-  /* Track K as the min of CMY as we go */
-  k = c = 255 - rgb[0];
-  m = 255 - rgb[1];
-  if (m < k)
-    k = m;
-  y = 255 - rgb[2];
-  if (y < k)
-    k = y;
-
-  /* Scale CMY to fill the full 0..255 range */
-  c = (c - k) * 255 / (255 - k);
-  m = (m - k) * 255 / (255 - k);
-  y = (y - k) * 255 / (255 - k);
-
-  return [ c, m, y, k ];
+  for (var i = 0; i < pixelcount; i++) {
+    var a = i * INTERVAL;
+    var end = a + INTERVAL + (Math.PI / 100);
+    
+    ctx.beginPath ();
+     ctx.fillStyle = clock[i];
+     ctx.arc (0, 0, drawRadius, i, end);
+     ctx.arc (0, 0, innerRadius, end, i, true);
+     ctx.fill();
+  };
+  ctx.restore();
 }
 
-function cmykToRGB(cmyk)
-{
-  var c; var m;
-  var y; var k;
-
-  /* Special case grey shades with pure K */
-  if (cmyk[0] == 0 && cmyk[1] == 0 &&
-      cmyk[2] == 0) {
-    var rgb = [];
-    rgb[0] = 255 - cmyk[3];
-    rgb[1] = rgb[0];
-    rgb[2] = rgb[0];
-    return rgb;
-  }
-
-  k = 255 - cmyk[3];
-  c = cmyk[0] * k / 255;
-  m = cmyk[1] * k / 255;
-  y = cmyk[2] * k / 255;
-  k = cmyk[3];
-
-  c = (c+k > 255) ? 255 : (c+k);
-  m = (m+k > 255) ? 255 : (m+k);
-  y = (y+k > 255) ? 255 : (y+k);
-
-  return [ parseInt (255 - c), parseInt (255 - m), parseInt (255 - y) ];
-}
-
-function mixCMYK (col1, col2)
-{
-  var cmyk1 = rgbToCMYK (col1);
-  var cmyk2 = rgbToCMYK (col2);
-  var i;
-  var tmp = [];
-  var min_cmy = 65535;
-  var out = [];
-
-  /* Blend CMYK by addition, then
-   * normalise CMY into K */
-  for (i = 0; i < 3; i++) {
-    tmp[i]  = (cmyk1[i] + cmyk2[i]);// / 2;
-    if (tmp[i] < min_cmy)
-      min_cmy = tmp[i];
-  }
-
-  for (i = 0; i < 3; i++) {
-    if (tmp[i] - min_cmy > 255)
-      out[i] = 255;
-    else
-      out[i] = tmp[i] - min_cmy;
-  }
-
-  tmp[3]  = (cmyk1[3] + cmyk2[3]);// / 2;
-  if (tmp[3] + min_cmy > 255)
-    out[3] = 255;
-  else
-    out[3] = tmp[3] + min_cmy;
-
-  return cmykToRGB (out);
-}
 
 function draw(ctx, x, y, col1, col2, hours, mins)
 {
 
-  ctx.save();
+  ctx.restore();
 
   
   ctx.translate (x, y);
@@ -325,9 +262,10 @@ function tick()
 
 
     ctx.clearRect(0,0,width,height);
-    draw(ctx, width/6, height/2,hoursColour,white, hours, mins);
-    draw(ctx, width/2, height/2,hoursColour,minsColour, hours, mins);
-    draw(ctx, 5*width/6, height/2, white,minsColour , hours, mins);
+    //draw(ctx, width/6, height/2,hoursColour,white, hours, mins);
+    show(ctx, width/6, height/2);
+    //draw(ctx, width/2, height/2,hoursColour,minsColour, hours, mins);
+    //draw(ctx, 5*width/6, height/2, white,minsColour , hours, mins);
 
     if (document.getElementById("manualradio").checked == false) {
         document.getElementById('minutestextbox').value = pad(Math.floor(mins));
@@ -373,6 +311,10 @@ jQuery(document).ready(function($){
 
   ctx = $("#canvas")[0].getContext('2d');
 
+  for (var i = 120 - 1; i >= 0; i--) {
+    clock[i] = brightGreen.getCSSHexadecimalRGB();
+  };
+  alert(brightRed.getHSL().h);
 
 
   // Make it visually fill the positioned parent
@@ -386,16 +328,7 @@ jQuery(document).ready(function($){
   height = (width/3)+10;
   needRedraw = true;
 
-  if (!document.addEventListener && document.attachEvent)
-  { // IE
-    document.attachEvent('onkeydown', handleKeyDown)
-    document.attachEvent('onkeypress', handleKeyPress)
-    document.attachEvent('onkeyup', handleKeyUp)
-  } else {
-    window.addEventListener('keydown', handleKeyDown, true)
-    window.addEventListener('keypress', handleKeyPress, true)
-    window.addEventListener('keyup', handleKeyUp, true)
-  }
+
 
   /* setup */
   drawRadius = width / 6 * 0.95;
@@ -408,4 +341,93 @@ function debug(text)
 {
   var c = document.getElementById('console');
   c.innerHTML += text;
+}
+
+
+function rgbToCMYK(rgb)
+{
+  /* Special case all black */
+  if (rgb[0] == 0 && rgb[1] == 0 &&
+      rgb[2] == 0) {
+    return [0, 0, 0, 255];
+  }
+  var c; var m;
+  var y; var k;
+
+  /* Track K as the min of CMY as we go */
+  k = c = 255 - rgb[0];
+  m = 255 - rgb[1];
+  if (m < k)
+    k = m;
+  y = 255 - rgb[2];
+  if (y < k)
+    k = y;
+
+  /* Scale CMY to fill the full 0..255 range */
+  c = (c - k) * 255 / (255 - k);
+  m = (m - k) * 255 / (255 - k);
+  y = (y - k) * 255 / (255 - k);
+
+  return [ c, m, y, k ];
+}
+
+function cmykToRGB(cmyk)
+{
+  var c; var m;
+  var y; var k;
+
+  /* Special case grey shades with pure K */
+  if (cmyk[0] == 0 && cmyk[1] == 0 &&
+      cmyk[2] == 0) {
+    var rgb = [];
+    rgb[0] = 255 - cmyk[3];
+    rgb[1] = rgb[0];
+    rgb[2] = rgb[0];
+    return rgb;
+  }
+
+  k = 255 - cmyk[3];
+  c = cmyk[0] * k / 255;
+  m = cmyk[1] * k / 255;
+  y = cmyk[2] * k / 255;
+  k = cmyk[3];
+
+  c = (c+k > 255) ? 255 : (c+k);
+  m = (m+k > 255) ? 255 : (m+k);
+  y = (y+k > 255) ? 255 : (y+k);
+
+  return [ parseInt (255 - c), parseInt (255 - m), parseInt (255 - y) ];
+}
+
+function mixCMYK (col1, col2)
+{
+  var cmyk1 = rgbToCMYK (col1);
+  var cmyk2 = rgbToCMYK (col2);
+  var i;
+  var tmp = [];
+  var min_cmy = 65535;
+  var out = [];
+
+  /* Blend CMYK by addition, then
+   * normalise CMY into K */
+  for (i = 0; i < 3; i++) {
+    tmp[i]  = (cmyk1[i] + cmyk2[i]);// / 2;
+    if (tmp[i] < min_cmy)
+      min_cmy = tmp[i];
+  }
+
+  for (i = 0; i < 3; i++) {
+    if (tmp[i] - min_cmy > 255)
+      out[i] = 255;
+    else
+      out[i] = tmp[i] - min_cmy;
+  }
+
+  tmp[3]  = (cmyk1[3] + cmyk2[3]);// / 2;
+  if (tmp[3] + min_cmy > 255)
+    out[3] = 255;
+  else
+    out[3] = tmp[3] + min_cmy;
+
+  return cmykToRGB (out);
 }
