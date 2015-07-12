@@ -1,0 +1,35 @@
+body {
+  background-color:#ffffff;
+}
+
+canvas {
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+
+  margin: 0px;
+}
+
+p.textboxes {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    display:block;
+}
+
+#console {
+  background-color:#ffcccc;
+  float: right;
+  width: 350px;
+}
+.resizedTextbox { width: 160px; height: 20px; padding: 0px; text-align: center}
+
+.temp123
+{
+margin: 0 auto;
+margin-left: auto;
+margin-right: auto;
+text-align:center;
+}

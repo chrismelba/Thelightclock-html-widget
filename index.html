@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <link rel="stylesheet" href="jquery-ui.min.css">
+      <script src="external/jquery/jquery.js"></script>
+      <script src="jquery-ui.min.js"></script>
+      <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+      <title>local lightclock demo</title>
+      <link rel="stylesheet" href="clock.css" type="text/css" />
+      <script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+      <script type="text/javascript" src="clock.js"></script>
+      <script src='js/spectrum.js'></script>
+      <link rel='stylesheet' href='spectrum.css' />
+      <script>
+        jQuery("#hourcolourpicker").spectrum({
+          color: "#f00"
+        });
+      </script>
+   </head>
+   <body bgcolor="#000000">
+      <div id="console"></div>
+      <canvas id="canvas"></canvas>
+
+            <div class = "temp123"> 
+      <p class = "textboxes"> 
+      <input type="text" id="hourstextbox" value="Hours" class="resizedTextbox" onClick="manualmode();"><input type="text" id="bothtextbox" value="both" class="resizedTextbox" disabled><input type="text" id="minutestextbox" value="Minutes" class="resizedTextbox" onClick="manualmode();"><br></p>
+
+      <form style="text-align:center"; width:640px; margin: 0 auto;>
+        
+        <input type="radio" name="speed" id="fastradio" checked = "checked">Fast  <input type="radio" name="speed" id="currentradio">Current  Time <input type="radio" name="speed" id="manualradio">Manual
+      </form>
+
+
+      </div>
+
+
+   </body>
+
+</html>
